@@ -1,9 +1,9 @@
 import os
 import secrets
 from PIL import Image
-from flask import render_template, url_for, redirect, flash, request, abort
-from FlaskBlog import app, db, bcrypt
-from FlaskBlog.forms import RegistrationForm, LoginForm, RetailerProductsForm, UpdateAccountForm
+from flask import render_template, url_for, redirect, flash, request, abort, session
+from FlaskBlog import app, db, bcrypt, photos
+from FlaskBlog.forms import RegistrationForm, LoginForm, RetailerProductsForm, UpdateAccountForm, UploadForm
 from FlaskBlog.models import User, Post
 from flask_login import login_user, current_user, logout_user, login_required
 
@@ -94,7 +94,7 @@ def account():
     return render_template('account.html', title= 'Account', image_file=image_file, form=form)
 
 
-
+""" 
 @app.route('/create_farm', methods=['GET','POST'])
 @login_required
 def create_farm():
@@ -113,9 +113,27 @@ def create_farm():
 
     image_farm_file = url_for('static', filename='Pics/' + post.image_farm_file)
     return render_template('create_retailer.html', form=form, image=image_farm_file)
+"""
+
+
 
 @app.route('/post/<int:post_id>')
 def post(post_id):
     post = Post.query.get_or_404(post_id)
     return render_template('post.html', title=post.title, post=post)
 
+
+
+
+@app.route("/upload",methods=["POST","GET"])
+def upload():
+    if not os.path.exists('static/'+ str(session.get('id'))):
+        os.makedirs('static/'+ str(session.get('id')))
+    file_url = os.listdir('static/'+ str(session.get('id')))
+    file_url = [ str(session.get('id')) + "/" + file for file in file_url ]
+    formupload = UploadForm()
+    print session.get('email')
+    if formupload.validate_on_submit():
+        filename = photos.save(formupload.file.data, name=str(session.get('id'))+'.jpg', folder=str(session.get('id')))
+        file_url.append(filename)
+    return render_template("upload.html", formupload=formupload, filelist=file_url)

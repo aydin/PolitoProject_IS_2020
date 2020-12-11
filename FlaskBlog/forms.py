@@ -44,3 +44,6 @@ class UpdateAccountForm(FlaskForm):
         if user:
             raise ValidationError('That username is taken. Please choose another one.')
 
+class UploadForm(FlaskForm):
+    file = FileField('file', validators=[DataRequired()])
+    upload = SubmitField('upload')
