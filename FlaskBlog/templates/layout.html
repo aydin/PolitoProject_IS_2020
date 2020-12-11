@@ -46,7 +46,10 @@
                         </div>
                     </li>
                     <a class="nav-item nav-link" href="{{ url_for('home') }}">Shop Now</a>
-                    <a class="nav-item nav-link" href="{{ url_for('home') }}">Account</a>
+                    <a class="nav-item nav-link" href="{{ url_for('account') }}">Account</a>
+                     {% if current_user.role == 'producer' %}
+                    <a class="nav-item nav-link" href="{{ url_for('create_farm') }}">Farm Details</a>
+                     {% endif %}
                     <a class="nav-item nav-link" href="{{ url_for('about') }}">About</a>
                     <a class="nav-item nav-link" href="{{ url_for('logout') }}">Logout</a>
 

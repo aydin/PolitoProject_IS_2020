@@ -1,7 +1,9 @@
 import os
+import secrets
+from PIL import Image
 from flask import render_template, url_for, redirect, flash, request, abort
 from FlaskBlog import app, db, bcrypt
-from FlaskBlog.forms import RegistrationForm, LoginForm, RetailerProductsForm
+from FlaskBlog.forms import RegistrationForm, LoginForm, RetailerProductsForm, UpdateAccountForm
 from FlaskBlog.models import User, Post
 from flask_login import login_user, current_user, logout_user, login_required
 
@@ -59,6 +61,39 @@ def logout():
     logout_user()
     return redirect(url_for('login'))
 
+def save_picture(form_picture):
+
+    fname, f_ext = os.path.splitext(form_picture.filename)
+    picture_fn = fname + f_ext
+    picture_path = os.path.join(app.root_path, 'static/Pics', picture_fn)
+    form_picture.save(picture_path)
+
+    output_size = (125, 125)
+    i = Image.open(form_picture)
+    i.thumbnail(output_size)
+    i.save(picture_path)
+
+    return picture_fn
+
+@app.route('/account', methods=['GET','POST'])
+@login_required
+def account():
+    form = UpdateAccountForm()
+    if form.validate_on_submit():
+        if form.picture.data:
+            picture_file = save_picture(form.picture.data)
+            current_user.image_file = picture_file
+
+        current_user.username = form.username.data
+        current_user.email = form.email.data
+        db.session.commit()
+        flash('Your account has been updated', 'success')
+        return redirect(url_for('account'))
+
+    image_file = url_for('static', filename='Pics/' + current_user.image_file)
+    return render_template('account.html', title= 'Account', image_file=image_file, form=form)
+
+
 
 @app.route('/create_farm', methods=['GET','POST'])
 @login_required
@@ -67,12 +102,17 @@ def create_farm():
         return redirect(url_for('home'))
     form = RetailerProductsForm()
     if form.validate_on_submit():
-        post = Post(title=form.title.data, content=form.content.data, author=current_user)
+        if form.picture.data:
+            picture_file = save_picture(form.picture.data)
+        post = Post(title=form.title.data, content=form.content.data, image_farm_file=picture_file, author=current_user)
         db.session.add(post)
         db.session.commit()
-        flash('your farm products page has been created','success')
-        return redirect(url_for('home'))
-    return render_template('create_retailer.html', form=form)
+        flash('your farm products page has been created', 'success')
+        image_farm_file = url_for('static', filename='Pics/' + picture_file)
+        return redirect(url_for('home', image=image_farm_file))
+
+    image_farm_file = url_for('static', filename='Pics/' + post.image_farm_file)
+    return render_template('create_retailer.html', form=form, image=image_farm_file)
 
 @app.route('/post/<int:post_id>')
 def post(post_id):
