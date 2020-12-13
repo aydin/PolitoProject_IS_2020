@@ -2,7 +2,7 @@ import os
 import secrets
 from PIL import Image
 from flask import render_template, url_for, redirect, flash, request, abort, session
-from FlaskBlog import app, db, bcrypt, photos
+from FlaskBlog import app, db, bcrypt
 from FlaskBlog.forms import RegistrationForm, LoginForm, RetailerProductsForm, UpdateAccountForm, UploadForm
 from FlaskBlog.models import User, Post
 from flask_login import login_user, current_user, logout_user, login_required
@@ -94,13 +94,14 @@ def account():
     return render_template('account.html', title= 'Account', image_file=image_file, form=form)
 
 
-""" 
+
 @app.route('/create_farm', methods=['GET','POST'])
 @login_required
 def create_farm():
     if not current_user.is_Producer():
         return redirect(url_for('home'))
     form = RetailerProductsForm()
+    picture_file = ''
     if form.validate_on_submit():
         if form.picture.data:
             picture_file = save_picture(form.picture.data)
@@ -108,12 +109,9 @@ def create_farm():
         db.session.add(post)
         db.session.commit()
         flash('your farm products page has been created', 'success')
-        image_farm_file = url_for('static', filename='Pics/' + picture_file)
-        return redirect(url_for('home', image=image_farm_file))
+        return redirect(url_for('home', posts=[post]))
+    return render_template('create_retailer.html', form=form)
 
-    image_farm_file = url_for('static', filename='Pics/' + post.image_farm_file)
-    return render_template('create_retailer.html', form=form, image=image_farm_file)
-"""
 
 
 
@@ -132,7 +130,7 @@ def upload():
     file_url = os.listdir('static/'+ str(session.get('id')))
     file_url = [ str(session.get('id')) + "/" + file for file in file_url ]
     formupload = UploadForm()
-    print session.get('email')
+    print(session.get('email'))
     if formupload.validate_on_submit():
         filename = photos.save(formupload.file.data, name=str(session.get('id'))+'.jpg', folder=str(session.get('id')))
         file_url.append(filename)
